@@ -20,7 +20,7 @@ dependencies {
 	testImplementation group: 'net.runelite', name: 'jshell', version: runeLiteVersion
 }
 
-group = 'net.runelite.client.plugins'
+group = 'com.alchmate'
 version = '1.0.0'
 sourceCompatibility = '11'
 targetCompatibility = '11'
@@ -34,7 +34,7 @@ task run(type: JavaExec) {
 	group = 'verification'
 	description = 'Runs RuneLite with the AlchMate plugin'
 	classpath = sourceSets.test.runtimeClasspath
-	mainClass = 'net.runelite.client.plugins.alchbridge.AlchBridgePluginTest'
+	mainClass = 'com.alchmate.AlchMatePluginTest'
 	jvmArgs = ['-ea']
 	args = ['--developer-mode', '--debug']
 }

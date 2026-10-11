@@ -1,4 +1,4 @@
-package net.runelite.client.plugins.alchbridge;
+package com.alchmate;
 
 public enum CostBasisMode {
     AUTO_DETECT("Auto-Detect (GE / P2P)"),

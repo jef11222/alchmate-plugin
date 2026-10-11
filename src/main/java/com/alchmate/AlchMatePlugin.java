@@ -1,4 +1,4 @@
-package net.runelite.client.plugins.alchbridge;
+package com.alchmate;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -62,8 +62,8 @@ import org.slf4j.LoggerFactory;
     tags = {"alch", "ge", "tracker", "bridge", "dashboard", "panel", "overlay", "alchmate", "bond"},
     enabledByDefault = true
 )
-public class AlchBridgePlugin extends Plugin {
-    private static final Logger log = LoggerFactory.getLogger(AlchBridgePlugin.class);
+public class AlchMatePlugin extends Plugin {
+    private static final Logger log = LoggerFactory.getLogger(AlchMatePlugin.class);
 
     @Inject
     private Client client;
@@ -72,7 +72,7 @@ public class AlchBridgePlugin extends Plugin {
     private ItemManager itemManager;
 
     @Inject
-    private AlchBridgeConfig config;
+    private AlchMateConfig config;
 
     @Inject
     private Gson gson;
@@ -87,9 +87,9 @@ public class AlchBridgePlugin extends Plugin {
     private OverlayManager overlayManager;
 
     @Inject
-    private AlchBridgeOverlay overlay;
+    private AlchMateOverlay overlay;
 
-    private AlchBridgePanel panel;
+    private AlchMatePanel panel;
     private NavigationButton navButton;
 
     private HttpClient httpClient;
@@ -199,11 +199,11 @@ public class AlchBridgePlugin extends Plugin {
     private final java.util.ArrayDeque<long[]> recentSkillingXpDrops = new java.util.ArrayDeque<>();
 
     @Provides
-    AlchBridgeConfig provideConfig(ConfigManager configManager) {
-        return configManager.getConfig(AlchBridgeConfig.class);
+    AlchMateConfig provideConfig(ConfigManager configManager) {
+        return configManager.getConfig(AlchMateConfig.class);
     }
 
-    public AlchBridgeConfig getConfig() {
+    public AlchMateConfig getConfig() {
         return config;
     }
 
@@ -221,7 +221,7 @@ public class AlchBridgePlugin extends Plugin {
         }
 
         // Create in-game sidebar panel
-        panel = new AlchBridgePanel(this);
+        panel = new AlchMatePanel(this);
         navButton = NavigationButton.builder()
             .tooltip("AlchMate")
             .icon(createIcon())
@@ -623,7 +623,7 @@ public class AlchBridgePlugin extends Plugin {
 
     @Subscribe
     public void onConfigChanged(ConfigChanged event) {
-        if ("alchbridge".equals(event.getGroup())) {
+        if ("alchmate".equals(event.getGroup())) {
             if ("costBasisMode".equals(event.getKey())) {
                 activeCostBasisOverride = null;
                 sessionProfit = calculateSessionProfit();
@@ -1076,7 +1076,7 @@ public class AlchBridgePlugin extends Plugin {
         activeCostBasisOverride = next;
         if (configManager != null) {
             try {
-                configManager.setConfiguration("alchbridge", "costBasisMode", next);
+                configManager.setConfiguration("alchmate", "costBasisMode", next);
             } catch (Exception e) {
                 log.debug("Could not persist cost basis config: {}", e.getMessage());
             }
@@ -1254,7 +1254,7 @@ public class AlchBridgePlugin extends Plugin {
         boolean next = !current;
         if (configManager != null) {
             try {
-                configManager.setConfiguration("alchbridge", "showOverlay", next);
+                configManager.setConfiguration("alchmate", "showOverlay", next);
             } catch (Exception e) {
                 log.debug("Could not persist overlay config: {}", e.getMessage());
             }
@@ -1505,7 +1505,7 @@ public class AlchBridgePlugin extends Plugin {
         bondTrackerOverride = next;
         if (configManager != null) {
             try {
-                configManager.setConfiguration("alchbridge", "showBondTracker", next);
+                configManager.setConfiguration("alchmate", "showBondTracker", next);
             } catch (Exception e) {
                 log.debug("Could not persist bond tracker config: {}", e.getMessage());
             }
@@ -1551,7 +1551,7 @@ public class AlchBridgePlugin extends Plugin {
         stage2CushionOverride = next;
         if (configManager != null) {
             try {
-                configManager.setConfiguration("alchbridge", "showStage2Cushion", next);
+                configManager.setConfiguration("alchmate", "showStage2Cushion", next);
             } catch (Exception e) {
                 log.debug("Could not persist stage 2 cushion config: {}", e.getMessage());
             }
@@ -1999,3 +1999,4 @@ public class AlchBridgePlugin extends Plugin {
         return (long) Math.round((remXp / liveSkillingXpHr) * 3600.0);
     }
 }
+

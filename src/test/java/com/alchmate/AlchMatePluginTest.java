@@ -1,13 +1,13 @@
-package net.runelite.client.plugins.alchbridge;
+package com.alchmate;
 
 import net.runelite.client.RuneLite;
 import net.runelite.client.externalplugins.ExternalPluginManager;
 
-public class AlchBridgePluginTest
+public class AlchMatePluginTest
 {
 	public static void main(String[] args) throws Exception
 	{
-		ExternalPluginManager.loadBuiltin(AlchBridgePlugin.class);
+		ExternalPluginManager.loadBuiltin(AlchMatePlugin.class);
 		RuneLite.main(args);
 	}
 }

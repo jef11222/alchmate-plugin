@@ -1,4 +1,4 @@
-package net.runelite.client.plugins.alchbridge;
+package com.alchmate;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -28,7 +28,7 @@ import javax.swing.border.EmptyBorder;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.PluginPanel;
 
-public class AlchBridgePanel extends PluginPanel {
+public class AlchMatePanel extends PluginPanel {
     private static final Color GOLD = new Color(243, 156, 18);
     private static final Color PROFIT_GREEN = new Color(46, 204, 113);
     private static final Color CARD_BG = new Color(30, 30, 34);
@@ -50,9 +50,9 @@ public class AlchBridgePanel extends PluginPanel {
 
     // Skilling Progression UI Elements
     private final JPanel skillingCard = new JPanel();
-    private final JLabel skillingTitleLabel = new JLabel("⚡ Skilling Progression");
+    private final JLabel skillingTitleLabel = new JLabel("âš¡ Skilling Progression");
     private final JLabel skillingActivityLabel = new JLabel("Auto-detecting activity...");
-    private final JLabel skillingLevelLabel = new JLabel("Level: -- → --");
+    private final JLabel skillingLevelLabel = new JLabel("Level: -- â†’ --");
     private final JLabel skillingEtaLabel = new JLabel("Est. Next Lvl: --");
     private final JLabel skillingRateLabel = new JLabel("Pace: --");
 
@@ -65,9 +65,9 @@ public class AlchBridgePanel extends PluginPanel {
     private final JLabel bondEtaLabel = new JLabel("Bond ETA: -- | P2P ETA: --");
     private final JLabel bondStatusPill = new JLabel("Initializing roadmap...");
 
-    private final AlchBridgePlugin plugin;
+    private final AlchMatePlugin plugin;
 
-    public AlchBridgePanel(AlchBridgePlugin plugin) {
+    public AlchMatePanel(AlchMatePlugin plugin) {
         super(false);
         this.plugin = plugin;
         setLayout(new BorderLayout());
@@ -344,7 +344,7 @@ public class AlchBridgePanel extends PluginPanel {
         Clipboard cb = Toolkit.getDefaultToolkit().getSystemClipboard();
         cb.setContents(sel, sel);
 
-        bannerLabel.setText("✓ " + bannerMsg);
+        bannerLabel.setText("âœ“ " + bannerMsg);
         bannerLabel.setForeground(PROFIT_GREEN);
     }
 
@@ -451,17 +451,17 @@ public class AlchBridgePanel extends PluginPanel {
             if (skillName == null || skillName.isEmpty()) {
                 skillingActivityLabel.setText("Auto-detecting activity...");
                 skillingActivityLabel.setForeground(Color.GRAY);
-                skillingLevelLabel.setText("Level: -- → --");
+                skillingLevelLabel.setText("Level: -- â†’ --");
                 skillingEtaLabel.setText("Est. Next Lvl: --");
                 skillingRateLabel.setText("Pace: --");
                 return;
             }
 
-            skillingTitleLabel.setText("⚡ " + skillName + " Progression");
+            skillingTitleLabel.setText("âš¡ " + skillName + " Progression");
             skillingActivityLabel.setText(activityName != null && !activityName.isEmpty() ? activityName : (skillName + " Training"));
             skillingActivityLabel.setForeground(Color.WHITE);
 
-            skillingLevelLabel.setText(String.format("Level %d → %d (%s XP left)", curLvl, nextLvl, numFmt.format(remXp)));
+            skillingLevelLabel.setText(String.format("Level %d â†’ %d (%s XP left)", curLvl, nextLvl, numFmt.format(remXp)));
             skillingLevelLabel.setForeground(new Color(220, 220, 220));
 
             if (estSeconds > 0) {
@@ -483,7 +483,7 @@ public class AlchBridgePanel extends PluginPanel {
     }
 
     public void updateInventoryBatch(
-        List<AlchBridgePlugin.BatchItemEntry> entries, int totalQty,
+        List<AlchMatePlugin.BatchItemEntry> entries, int totalQty,
         long totalProfit, long grossGp, long estSeconds,
         int natRunes, String fireSource, int alchsPerHour
     ) {
@@ -508,7 +508,7 @@ public class AlchBridgePanel extends PluginPanel {
             int distinctTypes = entries.size();
             if (distinctTypes == 1) {
                 batchTitleLabel.setText("Alch Batch (Inventory)");
-                AlchBridgePlugin.BatchItemEntry single = entries.get(0);
+                AlchMatePlugin.BatchItemEntry single = entries.get(0);
                 String notedTag = single.isNoted ? " (noted)" : "";
                 batchItemLabel.setText(String.format("%,dx %s%s", single.qty, single.name, notedTag));
                 batchItemLabel.setForeground(Color.WHITE);
@@ -525,9 +525,9 @@ public class AlchBridgePanel extends PluginPanel {
 
                 StringBuilder tooltip = new StringBuilder("<html><b>Inventory Batch (")
                     .append(String.format("%,d", totalQty)).append(" items, ").append(distinctTypes).append(" types):</b><br/>");
-                for (AlchBridgePlugin.BatchItemEntry e : entries) {
+                for (AlchMatePlugin.BatchItemEntry e : entries) {
                     String pEaStr = e.profitEa >= 0 ? ("+" + numFmt.format(e.profitEa)) : numFmt.format(e.profitEa);
-                    tooltip.append("• ").append(String.format("%,dx %s", e.qty, e.name))
+                    tooltip.append("â€¢ ").append(String.format("%,dx %s", e.qty, e.name))
                            .append(" <font color='#aaaaaa'>(").append(pEaStr).append(" ea)</font><br/>");
                 }
                 tooltip.append("</html>");
@@ -660,7 +660,7 @@ public class AlchBridgePanel extends PluginPanel {
                 bondStage1Label.setForeground(PROFIT_GREEN);
             } else {
                 long remBond = bondPrice - totalWealth;
-                bondStage1Label.setText(String.format("Stage 1 (Bond): %s / %s (%.1f%%) • Need %s",
+                bondStage1Label.setText(String.format("Stage 1 (Bond): %s / %s (%.1f%%) â€¢ Need %s",
                     formatGp(totalWealth), formatGp(bondPrice), s1Pct, formatGp(remBond)));
                 bondStage1Label.setForeground(new Color(255, 193, 7));
             }
@@ -669,14 +669,14 @@ public class AlchBridgePanel extends PluginPanel {
             if (stage2Enabled && cushionAmount > 0) {
                 bondStage2Label.setVisible(true);
                 if (totalWealth < bondPrice) {
-                    bondStage2Label.setText(String.format("Stage 2 (Cushion): 0 gp / %s (0.0%%) • Locked",
+                    bondStage2Label.setText(String.format("Stage 2 (Cushion): 0 gp / %s (0.0%%) â€¢ Locked",
                         formatGp(cushionAmount)));
                     bondStage2Label.setForeground(new Color(140, 140, 140));
                 } else if (totalWealth < totalGoal) {
                     long cushionSaved = totalWealth - bondPrice;
                     long remCushion = totalGoal - totalWealth;
                     double s2Pct = Math.min(100.0, (double) cushionSaved / (double) cushionAmount * 100.0);
-                    bondStage2Label.setText(String.format("Stage 2 (Cushion): %s / %s (%.1f%%) • Need %s",
+                    bondStage2Label.setText(String.format("Stage 2 (Cushion): %s / %s (%.1f%%) â€¢ Need %s",
                         formatGp(cushionSaved), formatGp(cushionAmount), s2Pct, formatGp(remCushion)));
                     bondStage2Label.setForeground(new Color(243, 156, 18));
                 } else {
@@ -776,3 +776,4 @@ public class AlchBridgePanel extends PluginPanel {
         }
     }
 }
+

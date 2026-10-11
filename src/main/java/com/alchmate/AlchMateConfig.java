@@ -1,15 +1,15 @@
-package net.runelite.client.plugins.alchbridge;
+package com.alchmate;
 
 import net.runelite.client.config.Config;
 import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigItem;
 
-@ConfigGroup("alchbridge")
-public interface AlchBridgeConfig extends Config {
+@ConfigGroup("alchmate")
+public interface AlchMateConfig extends Config {
     @ConfigItem(
         keyName = "bridgePort",
         name = "Dashboard Port",
-        description = "Local port where OSRS Alch Dashboard listens (default: 18833). Communicates locally on 127.0.0.1 (localhost).",
+        description = "Local port where AlchMate desktop companion listens (default: 18833). Communicates locally on 127.0.0.1 (localhost).",
         position = 0
     )
     default int bridgePort() {

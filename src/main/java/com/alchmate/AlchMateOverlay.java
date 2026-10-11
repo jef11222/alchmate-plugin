@@ -1,4 +1,4 @@
-package net.runelite.client.plugins.alchbridge;
+package com.alchmate;
 
 import java.awt.Color;
 import java.awt.Dimension;
@@ -12,12 +12,12 @@ import net.runelite.client.ui.overlay.OverlayPriority;
 import net.runelite.client.ui.overlay.components.LineComponent;
 import net.runelite.client.ui.overlay.components.TitleComponent;
 
-public class AlchBridgeOverlay extends OverlayPanel {
-    private final AlchBridgePlugin plugin;
-    private final AlchBridgeConfig config;
+public class AlchMateOverlay extends OverlayPanel {
+    private final AlchMatePlugin plugin;
+    private final AlchMateConfig config;
 
     @Inject
-    public AlchBridgeOverlay(AlchBridgePlugin plugin, AlchBridgeConfig config) {
+    public AlchMateOverlay(AlchMatePlugin plugin, AlchMateConfig config) {
         super(plugin);
         this.plugin = plugin;
         this.config = config;
