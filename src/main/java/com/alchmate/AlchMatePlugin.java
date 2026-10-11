@@ -43,6 +43,7 @@ import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GrandExchangeOfferChanged;
 import net.runelite.api.events.ItemContainerChanged;
 import net.runelite.api.events.StatChanged;
+import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
@@ -67,6 +68,9 @@ public class AlchMatePlugin extends Plugin {
 
     @Inject
     private Client client;
+
+    @Inject
+    private ClientThread clientThread;
 
     @Inject
     private ItemManager itemManager;
@@ -243,10 +247,12 @@ public class AlchMatePlugin extends Plugin {
 
         log.info("Alch Dashboard Bridge plugin started (Port: {})", config.bridgePort());
 
-        if (client.getGameState() == GameState.LOGGED_IN) {
-            sendAccountSnapshot();
-            scanInventoryBatch(null);
-        }
+        clientThread.invokeLater(() -> {
+            if (client != null && client.getGameState() == GameState.LOGGED_IN) {
+                sendAccountSnapshot();
+                scanInventoryBatch(null);
+            }
+        });
     }
 
     @Override
@@ -266,11 +272,31 @@ public class AlchMatePlugin extends Plugin {
         lastOfferState.clear();
         lastOfferQty.clear();
         lastInventoryItems.clear();
-        resetSession();
+        sessionStartTime = 0;
+        lastAlchTimestamp = 0;
+        totalActiveTimeMs = 0;
+        lastAlchedItem = null;
+        lastAlchedItemId = -1;
+        sessionAlchedItemCounts.clear();
+        sessionTotalHighAlchGp = 0;
+        sessionTotalNatCost = 0;
+        sessionUnknownItemProfit = 0;
+        sessionTradeProfit = 0;
+        recentCastTimestamps.clear();
+        cachedAlchsPerHour = 0;
+        cachedProfitPerHour = 0;
+        cachedXpPerHour = 0;
+        lastRateUpdateTime = 0;
+        batchDistinctTypes = 0;
+        detectedSkill = null;
+        detectedActivityName = "";
+        liveSkillingXpHr = 0.0;
+        lastSkillingDropTime = 0;
+        recentSkillingXpDrops.clear();
         lastMagicXp = -1;
         lastCoins = -1;
         lastNatureRunes = -1;
-        log.info("Alch Dashboard Bridge plugin stopped");
+        log.info("AlchMate plugin stopped");
     }
 
     public void fetchTop10Async() {
@@ -1308,13 +1334,21 @@ public class AlchMatePlugin extends Plugin {
     }
 
     public void scanInventoryBatch(ItemContainer inv) {
-        if (client == null || client.getGameState() != GameState.LOGGED_IN) {
+        if (client == null) {
             return;
         }
         if (inv == null) {
-            inv = client.getItemContainer(InventoryID.INVENTORY);
+            clientThread.invokeLater(() -> {
+                if (client != null && client.getGameState() == GameState.LOGGED_IN) {
+                    ItemContainer liveInv = client.getItemContainer(InventoryID.INVENTORY);
+                    if (liveInv != null) {
+                        scanInventoryBatch(liveInv);
+                    }
+                }
+            });
+            return;
         }
-        if (inv == null) {
+        if (client.getGameState() != GameState.LOGGED_IN) {
             return;
         }
 
@@ -1781,74 +1815,82 @@ public class AlchMatePlugin extends Plugin {
     }
 
     private void sendAccountSnapshot() {
-        try {
-            ItemContainer inv = client.getItemContainer(InventoryID.INVENTORY);
-            if (inv != null) {
-                detectSkillingFromInventory(inv);
-                scanInventoryBatch(inv);
-            } else if (panel != null && isBondTrackerEnabled()) {
-                panel.updateBondFreedom(
-                    getTotalWealth(),
-                    getBondPrice(),
-                    getCushionAmount(),
-                    isStage2Enabled(),
-                    getProfitPerHour()
-                );
-            }
-
-            lastSkillXpMap.put(Skill.CRAFTING, client.getSkillExperience(Skill.CRAFTING));
-            lastSkillXpMap.put(Skill.SMITHING, client.getSkillExperience(Skill.SMITHING));
-            lastSkillXpMap.put(Skill.FLETCHING, client.getSkillExperience(Skill.FLETCHING));
-            lastSkillXpMap.put(Skill.MAGIC, client.getSkillExperience(Skill.MAGIC));
-
-            Map<String, Object> data = new HashMap<>();
-            data.put("event", "ACCOUNT_SNAPSHOT");
-            data.put("account", getAccountName());
-            data.put("world", client.getWorld());
-            data.put("isMembers", isMembersWorld());
-            data.put("crafting", client.getRealSkillLevel(Skill.CRAFTING));
-            data.put("smithing", client.getRealSkillLevel(Skill.SMITHING));
-            data.put("fletching", client.getRealSkillLevel(Skill.FLETCHING));
-            data.put("magic", client.getRealSkillLevel(Skill.MAGIC));
-            data.put("crafting_xp", client.getSkillExperience(Skill.CRAFTING));
-            data.put("smithing_xp", client.getSkillExperience(Skill.SMITHING));
-            data.put("fletching_xp", client.getSkillExperience(Skill.FLETCHING));
-            data.put("magic_xp", client.getSkillExperience(Skill.MAGIC));
-
-            if (detectedSkill != null) {
-                int curXp = client.getSkillExperience(detectedSkill);
-                int curLvl = client.getRealSkillLevel(detectedSkill);
-                int nextLvlXp = getXpForLevel(Math.min(99, curLvl + 1));
-                int remXp = Math.max(0, nextLvlXp - curXp);
-                int estSecs = (liveSkillingXpHr > 1000) ? (int) Math.round((remXp / liveSkillingXpHr) * 3600.0) : 0;
-
-                data.put("active_skill", detectedSkill.getName());
-                data.put("detected_activity", detectedActivityName != null ? detectedActivityName : "");
-                data.put("skilling_xp_hr", (int) Math.round(liveSkillingXpHr));
-                data.put("rem_xp_next", remXp);
-                data.put("est_secs_next", estSecs);
-            }
-
-            if (inv != null) {
-                data.put("coins", inv.count(ItemID.COINS_995));
-                data.put("natureRunes", inv.count(ItemID.NATURE_RUNE));
-            }
-            data.put("bankCoins", lastBankCoins);
-            data.put("totalWealth", getTotalWealth());
-            data.put("geInvestedCoins", getGeInvestedCoins());
-            data.put("batchGrossGp", batchGrossGp);
-            data.put("batchItemName", batchItemName != null ? batchItemName : "");
-            data.put("batchItemQty", batchItemQty);
-            data.put("profitPerHour", getProfitPerHour());
-            data.put("alchsPerHour", getAlchsPerHour());
-            data.put("timestamp", System.currentTimeMillis() / 1000.0);
-
-            sendPayload(data);
-            syncActiveGeOffers();
-            syncGrandExchangeLimitsAndTrades();
-        } catch (Exception e) {
-            log.debug("Error preparing account snapshot: {}", e.getMessage());
+        if (client == null) {
+            return;
         }
+        clientThread.invokeLater(() -> {
+            if (client == null || client.getGameState() != GameState.LOGGED_IN) {
+                return;
+            }
+            try {
+                ItemContainer inv = client.getItemContainer(InventoryID.INVENTORY);
+                if (inv != null) {
+                    detectSkillingFromInventory(inv);
+                    scanInventoryBatch(inv);
+                } else if (panel != null && isBondTrackerEnabled()) {
+                    panel.updateBondFreedom(
+                        getTotalWealth(),
+                        getBondPrice(),
+                        getCushionAmount(),
+                        isStage2Enabled(),
+                        getProfitPerHour()
+                    );
+                }
+
+                lastSkillXpMap.put(Skill.CRAFTING, client.getSkillExperience(Skill.CRAFTING));
+                lastSkillXpMap.put(Skill.SMITHING, client.getSkillExperience(Skill.SMITHING));
+                lastSkillXpMap.put(Skill.FLETCHING, client.getSkillExperience(Skill.FLETCHING));
+                lastSkillXpMap.put(Skill.MAGIC, client.getSkillExperience(Skill.MAGIC));
+
+                Map<String, Object> data = new HashMap<>();
+                data.put("event", "ACCOUNT_SNAPSHOT");
+                data.put("account", getAccountName());
+                data.put("world", client.getWorld());
+                data.put("isMembers", isMembersWorld());
+                data.put("crafting", client.getRealSkillLevel(Skill.CRAFTING));
+                data.put("smithing", client.getRealSkillLevel(Skill.SMITHING));
+                data.put("fletching", client.getRealSkillLevel(Skill.FLETCHING));
+                data.put("magic", client.getRealSkillLevel(Skill.MAGIC));
+                data.put("crafting_xp", client.getSkillExperience(Skill.CRAFTING));
+                data.put("smithing_xp", client.getSkillExperience(Skill.SMITHING));
+                data.put("fletching_xp", client.getSkillExperience(Skill.FLETCHING));
+                data.put("magic_xp", client.getSkillExperience(Skill.MAGIC));
+
+                if (detectedSkill != null) {
+                    int curXp = client.getSkillExperience(detectedSkill);
+                    int curLvl = client.getRealSkillLevel(detectedSkill);
+                    int nextLvlXp = getXpForLevel(Math.min(99, curLvl + 1));
+                    int remXp = Math.max(0, nextLvlXp - curXp);
+                    int estSecs = (liveSkillingXpHr > 1000) ? (int) Math.round((remXp / liveSkillingXpHr) * 3600.0) : 0;
+
+                    data.put("active_skill", detectedSkill.getName());
+                    data.put("detected_activity", detectedActivityName != null ? detectedActivityName : "");
+                    data.put("skilling_xp_hr", (int) Math.round(liveSkillingXpHr));
+                    data.put("rem_xp_next", remXp);
+                    data.put("est_secs_next", estSecs);
+                }
+
+                if (inv != null) {
+                    data.put("coins", inv.count(ItemID.COINS_995));
+                    data.put("natureRunes", inv.count(ItemID.NATURE_RUNE));
+                }
+                data.put("bankCoins", lastBankCoins);
+                data.put("totalWealth", getTotalWealth());
+                data.put("geInvestedCoins", getGeInvestedCoins());
+                data.put("batchGrossGp", batchGrossGp);
+                data.put("batchItemName", batchItemName != null ? batchItemName : "");
+                data.put("batchItemQty", batchItemQty);
+                data.put("profitPerHour", getProfitPerHour());
+                data.put("alchsPerHour", getAlchsPerHour());
+                data.put("timestamp", System.currentTimeMillis() / 1000.0);
+
+                sendPayload(data);
+                syncActiveGeOffers();
+                syncGrandExchangeLimitsAndTrades();
+            } catch (Exception e) {
+                log.debug("Error preparing account snapshot: {}", e.getMessage());
+            }
+        });
     }
 
     private void syncGrandExchangeLimitsAndTrades() {
