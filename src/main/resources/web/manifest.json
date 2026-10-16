@@ -1,0 +1,21 @@
+{
+  "name": "AlchMate — OSRS High Alchemy & Economics",
+  "short_name": "AlchMate",
+  "description": "Live High Alchemy profit tracker, Crafting calculators, and Bond roadmap for Old School RuneScape.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0d0f12",
+  "theme_color": "#0d0f12",
+  "icons": [
+    {
+      "src": "https://static.runelite.net/cache/item/icon/561.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://static.runelite.net/cache/item/icon/13190.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
